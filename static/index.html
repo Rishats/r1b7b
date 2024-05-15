@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Data R1B7B www.rishat.space</title>
+    <style>
+        .data {
+            font-size: 24px;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+<div id="data" class="data">Waiting for data...</div>
+
+<script>
+    const ws = new WebSocket("ws://" + location.host + "/ws");
+
+    ws.onmessage = function(event) {
+        const data = parseFloat(event.data);
+        const dataDiv = document.getElementById('data');
+
+        let color;
+        if (data < 0.2) {
+            color = 'blue';
+        } else if (data < 0.4) {
+            color = 'cyan';
+        } else if (data < 0.8) {
+            color = 'limegreen';
+        } else if (data < 1.5) {
+            color = 'yellow';
+        } else if (data < 4.0) {
+            color = 'orange';
+        } else if (data < 12.0) {
+            color = 'magenta';
+        } else if (data < 30.0) {
+            color = 'purple';
+        } else if (data < 60.0) {
+            color = 'red';
+        } else {
+            color = 'darkred';
+        }
+
+        dataDiv.style.color = color;
+        dataDiv.textContent = `STA/LTA: ${data.toFixed(4)}`;
+    };
+
+    ws.onclose = function() {
+        document.getElementById('data').textContent = "Connection closed";
+    };
+</script>
+</body>
+</html>
