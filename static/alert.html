@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Data R1B7B www.rishat.space</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+        }
+        .data {
+            font-size: 24px;
+            margin: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        iframe {
+            margin-top: 20px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    <link id="favicon" rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAyElEQVQY02NgoAb+B4TAwMD/1YABGLlQZgZqAvEeWHpBBkcQWkAFMy1DQeYTC1ChN3gGGExBmn2ChMgU+CGFkAdWs6AiMNhtH8f8iJUMfEo3B0AW5wTGN6MQRQQUpJBE3/QVVNSABs8DXAQmWJEBUYABkmgHkGkZoGKRk0ABRZQABWZQDMRmrDQEAAErYKLIvM6MAAAAASUVORK5CYII=">
+</head>
+<body>
+<div class="container">
+    <div id="data" class="data">Waiting for data...</div>
+    <iframe id="dataIframe" width="500" height="350" src="https://dataview.raspberryshake.org/#/embed/AM/R1B7B/00/EHZ"></iframe>
+</div>
+
+<script>
+    const ws = new WebSocket("ws://" + location.host + "/ws");
+
+    let originalTitle = document.title;
+    let blinkInterval;
+    const originalFavicon = document.getElementById('favicon').href;
+
+    function createFavicon(color) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 16;
+        canvas.height = 16;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 16, 16);
+        return canvas.toDataURL('image/png');
+    }
+
+    ws.onmessage = function(event) {
+        const data = parseFloat(event.data);
+        const dataDiv = document.getElementById('data');
+
+        let color;
+        if (data < 0.2) {
+            color = 'blue';
+        } else if (data < 0.4) {
+            color = 'cyan';
+        } else if (data < 0.8) {
+            color = 'limegreen';
+        } else if (data < 1.5) {
+            color = 'yellow';
+        } else if (data < 4.0) {
+            color = 'orange';
+        } else if (data < 12.0) {
+            color = 'magenta';
+        } else if (data < 30.0) {
+            color = 'purple';
+        } else if (data < 60.0) {
+            color = 'red';
+        } else {
+            color = 'darkred';
+        }
+
+        dataDiv.style.color = color;
+        dataDiv.textContent = `STA/LTA: ${data.toFixed(4)}`;
+        document.getElementById('favicon').href = createFavicon(color);
+
+        if (data > 3.5) {
+            const alertSound = new Audio('data:audio/wav;base64,UklGRhYAAABXQVZFZm10IBAAAAABAAEARKwAABCxAgAEABAAZGF0YVgAAAAe6cY6TICwAKBNdGrYQwBAA3XooRpMj8CpvbEvzUEx8K4gzkXNA0D0xTr0j3F42kBu5rTLFMHVuXLbaQLk9tbMKmopVwAqqlT0AK5edhNBy+fnvfbv8+XBvAks91rwIQAVnLAAAAAElFTkSuQmCC');
+            alertSound.play();
+
+            if (!blinkInterval) {
+                blinkInterval = setInterval(() => {
+                    document.title = document.title === originalTitle ? 'Alert!' : originalTitle;
+                }, 1000);
+            }
+        } else {
+            clearInterval(blinkInterval);
+            document.title = originalTitle;
+            blinkInterval = null;
+        }
+    };
+
+    ws.onclose = function() {
+        document.getElementById('data').textContent = "Connection closed";
+    };
+
+    // Function to reload the iframe
+    function reloadIframe() {
+        const iframe = document.getElementById('dataIframe');
+        const src = iframe.src;
+        iframe.src = '';
+        iframe.src = src;
+    }
+
+    // Reload the iframe every minute (60000 milliseconds)
+    setInterval(reloadIframe, 60000);
+</script>
+</body>
+</html>

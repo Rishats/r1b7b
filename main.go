@@ -10,8 +10,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-//go:embed static/index.html
-var indexHTML embed.FS
+//go:embed static/*
+var staticFiles embed.FS
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -25,9 +25,11 @@ var (
 )
 
 func main() {
+	http.Handle("/static/", http.StripPrefix("", http.FileServer(http.FS(staticFiles))))
+
 	http.HandleFunc("/ws", wsHandler)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		data, _ := indexHTML.ReadFile("static/index.html")
+		data, _ := staticFiles.ReadFile("static/index.html")
 		w.Write(data)
 	})
 
